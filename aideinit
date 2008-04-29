@@ -1,0 +1,94 @@
+#!/bin/sh
+#
+# script to initialize an AIDE database and create a GPG key
+# specifically for use with the AIDE database
+#
+# written by Vincent Danen <vdanen-at-annvix.org>
+#
+# $Id$
+
+if [ ! -d /var/lib/aide ]; then
+    printf "The AIDE database directory /var/lib/aide does not exist!\n\n"
+    exit 1
+fi
+
+host="`hostname`"
+gpg="/usr/bin/gpg"
+aide="/usr/sbin/aide"
+fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
+
+if [ "`${gpg} --list-secret-key | grep aide@${host} >/dev/null 2>&1; echo $?`" == "1" ]; then
+    # we need to generate a gpg key
+
+    printf "Generating GPG private key for aide@${host}\n\n"
+    printf "This is done automatically, but you must provide a strong passphrase\nto protect the key.\n\n"
+
+    getpass() {
+        unset PASS1
+        unset PASS2
+        read -s -e -p "Passphrase: " PASS1
+        printf "\n"
+        read -s -e -p "Re-enter passphrase: " PASS2
+        printf "\n"
+        if [ "${PASS1}" != "${PASS2}" ]; then
+            printf "FATAL: Passwords do not match!\n\n"
+            unset PASS1
+            unset PASS2
+        fi
+    }
+
+    getpass
+    [[ "${PASS1}" == "" ]] && getpass
+    [[ "${PASS1}" == "" ]] && {
+        printf "FATAL: Password mis-match occurred twice.  Aborting.\n\n"
+        exit 1
+    }
+
+    printf "Generating GPG key... "
+    tmpfile=`mktemp` || exit 1
+
+    echo "Key-Type: DSA" >>${tmpfile}
+    echo "Key-Length: 1024" >>${tmpfile}
+    echo "Subkey-Type: ELG-E" >>${tmpfile}
+    echo "Subkey-Length: 1024" >>${tmpfile}
+    echo "Name-Real: AIDE" >>${tmpfile}
+    echo "Name-Comment: AIDE verification key" >>${tmpfile}
+    echo "Name-Email: aide@${host}" >>${tmpfile}
+    echo "Expire-Date: 0" >>${tmpfile}
+    echo "Passphrase: ${PASS1}" >>${tmpfile}
+
+    ${gpg} --batch --gen-key ${tmpfile}
+    if [ "$?" == "0" ]; then
+        printf " success!\n\n"
+        rm -f ${tmpfile}
+    else
+        printf " failed!\nAn error occurred; cannot proceed!\n\n"
+        rm -f ${tmpfile}
+        exit 1
+    fi
+fi
+
+signfile() {
+    echo ${PASS1} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --detach-sign aide.db
+    if [ "$?" == "1" ]; then
+        printf "FATAL:  Error occurred when creating the signature file!\n\n"
+        exit 1
+    fi
+}
+
+printf "Initializing the AIDE database... this may take a minute or two.\n"
+
+# set database to a non-existant file to prevent warnings
+${aide} --init -B "database=file:/tmp/foo" -B "database_out=file:/var/lib/aide/aide.db"
+pushd /var/lib/aide >/dev/null 2>&1
+    # create the signature file; we don't have to ask for the passphrase here, we've already got it
+    [[ -f aide.db.sig ]] && rm -f aide.db.sig
+    signfile
+    [[ ! -f aide.db.sig ]] && {
+        printf "FATAL: Signature was not created!  Aborting.\n\n"
+        exit 1
+    }
+    printf "Database successfully signed.\n\n"
+popd >/dev/null 2>&1
+
+exit 0

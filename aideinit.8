@@ -1,0 +1,88 @@
+.\\ $Id$
+.TH "aideinit" "8" "" "aideinit" "AIDE+gpg Information"
+.SH "NAME"
+.LP
+\fBaideinit\fR \- Wrapper scripts to secure AIDE with GnuPG
+.SH "OVERVIEW"
+.LP
+AIDE is an integrity checking system that will alert you if any unauthorized
+changes are made to your filesystem.
+.LP
+The \fBaideinit\fR, \fBaidecheck\fR, and \fBaideinit\fR scripts were written
+by Vincent Danen <vdanen@mandriva.com> for Annvix to provide much-needed data
+integrity checking to the AIDE database.  Upstream AIDE does not provide any
+mechanism for integrity checking, so in January 2006 before AIDE could be
+considered a useful replacement for Tripwire in Annvix, the AIDE+gpg scripts
+were written to allow the use of GnuPG to sign and verify the AIDE database.
+This provides the assurance required to know that the AIDE database is not
+tampered with.
+.LP
+The default AIDE configuration tries to be as
+comprehensive as possible, however it will require tailoring to your specific
+configuration in order for it to be completely useful; to do this edit the
+\fI/etc/aide.conf\fR file.
+.LP
+To begin, execute:
+.IP
+# aideinit
+.LP
+to initialize the database.  Unlike Tripwire, AIDE uses no encryption to protect the
+configuration or database files so you must ensure that only root has access to these
+files.  By default, \fI/etc/aide.conf\fR is mode 0600 and \fI/var/lib/aide\fR is mode
+0700 (the latter contains the database file(s)).
+.LP
+By default, AIDE performs a check every day via cron, which will be sent to the
+root user on the local system, so you'll want to make sure that you receive
+the root user's email on this system.  To run a check manually or to check for specific
+things, you can use \fBaide\fR(1) directly or use Mandriva's AIDE check and update scripts
+(\fB/etc/cron.daily/aide\fR and \fB/usr/sbin/aideupdate\fR respectively).
+.LP
+As you upgrade your system with new packages, make changes to configuration files, etc.
+you will need to keep updating your database.  In order to do this, use the \fBaideupdate\fR
+script.  This script will update the database against the current filesystem.  The \fI--check\fR
+option to AIDE simply reports on the current state of the filesystem compared to the database,
+whereas \fI--update\fR performs both a check and updates the database.
+.LP
+Ideally, when you are upgrading packages, you should perform an update before and after the
+upgrade.  This ensures you have a sane baseline and a very small window of opportunity for
+things to be changed without your notice.  If you update a number of packages one day and do
+not update the database for a few days, there is the possibility of a file being modified
+without your knowledge; with a large number of changed files in the report, you may be
+unaware of these changes.  Once you update packages, you should run another check and ensure that no other files have
+changed that do not look like they belong to any of the packages you updated.  Once you
+have run this check and confirmed that everything is ok, use \fBaideupdate\fR to update the
+database.  Practicing this will make AIDE a much more valuable and reliable tool.
+.LP
+Because AIDE does not use any encryption or crytographic verification of the database, and
+because the database is a plaintext file, the Mandriva AIDE package ships with Annvix's wrapper scripts
+that enforce the use of \fBgpg\fR(1) to perform verification of the database.  Although this is
+not manadatory, if you opt not to use gpg for verification, you will need to modify or
+replace the \fI/etc/cron.daily/aidecheck\fB script so that gpg is not used.
+.LP
+Rather than using the \fI--init\fR option with \fBaide\fR you should use the Annvix
+\fBaideinit\fR wrapper script.  This script will generate an initial database and will
+also generate a gpg(1) private key for use with AIDE.  Note that the email address assigned
+to the GPG key is "aide@hostname" so if you move database files from one host to another and/or
+use another copy of AIDE for offline verification, you will need to export the public key of the
+one host to import on the other.
+.LP
+To create a new gpg key and initialize the database, execute:
+.IP
+# aideinit
+.LP
+Once the database and gpg private key is generated, you can use \fB/etc/cron.daily/aide\fR to
+check the database against the current filesystem and \fBaideupdate\fR to update the database.
+These scripts make use of gpg's ability to create a detached signature of a file to verify
+it's validity.  The cron check script will alert you if the file has changed or if the detached
+signature is missing, as will the update script.  When you run \fBaideupdate\fR you will need
+to provide your gpg passphrase to create a new detached signature of the database.
+.LP
+When \fBaideupdate\fR is run, the old database file is rotated out, compressed, and renamed to
+\fIaide-[hostname]-[datestamp]-[timestamp].db.gz\fR in the \fI/var/lib/aide\fR directory.  The
+current AIDE database is always named \fIaide.db\fR.
+.SH "SEE ALSO"
+.LP
+\fBgpg\fR(1), \fBaide\fR(1)
+.SH "AUTHORS"
+.LP
+The AIDE+gpg scripts were written by Vincent Danen <vdanen@mandriva.com> for Annvix (\fIhttp://annvix.org/\fR).

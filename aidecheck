@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# script to run aide --check and verify GPG signatures
+#
+# written by Vincent Danen <vdanen-at-annvix.org>
+#
+# $Id$
+
+hostname=`uname -n`
+gpg="/usr/bin/gpg"
+aide="/usr/sbin/aide"
+fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
+
+echo "AIDE integrity check for ${hostname} beginning (`date`)"
+echo ""
+if [ ! -e /var/lib/aide/aide.db ] ; then
+    echo "**** Error: AIDE database for ${hostname} not found."
+    echo "**** Run 'aideinit' to create the database file."
+else
+    if [ -f /etc/aide.conf ]; then
+        if [ -f /var/lib/aide/aide.db.sig ]; then
+	    pushd /var/lib/aide >/dev/null
+	        echo "Verifying the GPG signature on the database..."
+		echo ""
+	        ${gpg} --verify aide.db.sig
+		echo ""
+		if [ "$?" == "1" ]; then
+		    echo "************************************************************"
+		    echo "GPG signature FAILED!  Your database has been tampered with!"
+		    echo "************************************************************"
+		    exit 1
+		fi
+	    popd >/dev/null
+	else
+	    echo "**** Error: No GPG signature found for the AIDE database!"
+	    echo "**** Unable to verify database; your system may be compromised or incorrectly configured!"
+	    exit 1
+	fi
+        nice -20 ${aide} --check -B "report_url=file:/var/lib/aide/reports/${fname}.report" 2>/dev/null
+    fi
+fi
+
+exit 0
