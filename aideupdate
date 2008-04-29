@@ -12,6 +12,8 @@ aide="/usr/sbin/aide"
 fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
 host="`hostname`"
 
+export GNUPGHOME=/root/.gnupg
+
 if [ ! -d /var/lib/aide ]; then
     printf "The AIDE database directory /var/lib/aide does not exist!\n\n"
     exit 1

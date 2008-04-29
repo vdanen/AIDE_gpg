@@ -11,6 +11,8 @@ gpg="/usr/bin/gpg"
 aide="/usr/sbin/aide"
 fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
 
+export GNUPGHOME=/root/.gnupg
+
 echo "AIDE integrity check for ${hostname} beginning (`date`)"
 echo ""
 if [ ! -e /var/lib/aide/aide.db ] ; then

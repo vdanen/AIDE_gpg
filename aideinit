@@ -17,6 +17,8 @@ gpg="/usr/bin/gpg"
 aide="/usr/sbin/aide"
 fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
 
+export GNUPGHOME=/root/.gnupg
+
 if [ "`${gpg} --list-secret-key | grep aide@${host} >/dev/null 2>&1; echo $?`" == "1" ]; then
     # we need to generate a gpg key
 
