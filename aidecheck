@@ -6,14 +6,17 @@
 #
 # $Id$
 
+# variables
+version="1.0"
 hostname=`uname -n`
 gpg="/usr/bin/gpg"
 aide="/usr/sbin/aide"
 fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
+header="AIDE+gpg - GnuPG authenticity for AIDE databases\nversion: ${version} - \$Id$\n\n"
 
 export GNUPGHOME=/root/.gnupg
 
-echo "AIDE integrity check for ${hostname} beginning (`date`)"
+echo "AIDE+gpg integrity check for ${hostname} beginning (`date`)"
 echo ""
 if [ ! -e /var/lib/aide/aide.db ] ; then
     echo "**** Error: AIDE database for ${hostname} not found."

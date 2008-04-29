@@ -7,10 +7,13 @@
 #
 # $Id$
 
+# variables
+version="1.0"
 gpg="/usr/bin/gpg"
 aide="/usr/sbin/aide"
 fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
 host="`hostname`"
+header="AIDE+gpg - GnuPG authenticity for AIDE databases\nversion: ${version} - \$Id$\n\n"
 
 export GNUPGHOME=/root/.gnupg
 
@@ -41,8 +44,8 @@ if [ -f aide.db ]; then
     else
         printf "**************************************************************\n"
         printf "No GPG signature file found!  Your system may be compromised\n"
-        printf "or incorrectly configured!  Please read man afterboot for\n"
-        printf "more information on how to correctly configure AIDE on Annvix!\n"
+        printf "or incorrectly configured!  Please read aideinit(8) for more\n"
+        printf "more information on how to correctly configure AIDE+gpg!\n"
         printf "**************************************************************\n"
         exit 1
     fi

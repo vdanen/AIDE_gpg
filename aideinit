@@ -7,17 +7,22 @@
 #
 # $Id$
 
-if [ ! -d /var/lib/aide ]; then
-    printf "The AIDE database directory /var/lib/aide does not exist!\n\n"
-    exit 1
-fi
-
+# variables
+version="1.0"
 host="`hostname`"
 gpg="/usr/bin/gpg"
 aide="/usr/sbin/aide"
 fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
+header="AIDE+gpg - GnuPG authenticity for AIDE databases\nversion: ${version} - \$Id$\n\n"
 
 export GNUPGHOME=/root/.gnupg
+
+printf "${header}"
+
+if [ ! -d /var/lib/aide ]; then
+    printf "The AIDE database directory /var/lib/aide does not exist!\n\n"
+    exit 1
+fi
 
 if [ "`${gpg} --list-secret-key | grep aide@${host} >/dev/null 2>&1; echo $?`" == "1" ]; then
     # we need to generate a gpg key
