@@ -7,7 +7,7 @@
 # $Id$
 
 # variables
-version="1.0"
+version="@pkg_version@"
 hostname=`uname -n`
 gpg="/usr/bin/gpg"
 aide="/usr/sbin/aide"
