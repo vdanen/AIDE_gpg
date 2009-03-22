@@ -30,6 +30,8 @@ changelog:
 	svn2cl --authors=../../common/trunk/username.xml
 
 install:
+	mkdir -p $(PREFIX)/$(SBINDIR)
+	mkdir -p $(PREFIX)/$(MANDIR)/man8
 	for script in $(SCRIPTS); do \
 	cp -p $$script $(PREFIX)$(SBINDIR)/ ; \
 	done
