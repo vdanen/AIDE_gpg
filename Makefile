@@ -1,4 +1,4 @@
-VERSION = 1.0
+VERSION = 1.0.1
 PACKAGE = aide+gpg
 
 MANPAGES = aideinit.8
@@ -23,6 +23,7 @@ dist: clean changelog
 clean:
 	-find . -name '*~' | xargs rm -f
 	rm -f *.bz2
+	rm -f ChangeLog
 	rm -rf $(PACKAGE)-$(VERSION)
 
 changelog:
