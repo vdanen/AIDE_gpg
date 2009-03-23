@@ -15,26 +15,31 @@ fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
 host="`hostname`"
 header="AIDE+gpg - GnuPG authenticity for AIDE databases\nversion: ${version} - \$Id$\n\n"
 
+# get the database directory
+dbdir=$(egrep '^@@define DBDIR' /etc/aide.conf | awk '{print $3}')
+database_file=$(egrep '^database=' /etc/aide.conf | sed "s|file:@@{DBDIR}|${dbdir}|g" | cut -d '=' -f 2)
+databasenew_file=$(egrep '^database_out=' /etc/aide.conf | sed "s|file:@@{DBDIR}|${dbdir}|g" | cut -d '=' -f 2)
+
 export GNUPGHOME=/root/.gnupg
 
-if [ ! -d /var/lib/aide ]; then
-    printf "The AIDE database directory /var/lib/aide does not exist!\n\n"
+if [ ! -d ${dbdir} ]; then
+    printf "The AIDE database directory ${dbdir} does not exist!\n\n"
     exit 1
 fi
 
-if [ ! -d /var/lib/aide/reports ]; then
-    printf "Creating /var/lib/aide/reports to store reports\n"
-    mkdir /var/lib/aide/reports && chmod 0700 /var/lib/aide/reports
+if [ ! -d ${dbdir}/reports ]; then
+    printf "Creating ${dbdir}/reports to store reports\n"
+    mkdir ${dbdir}/reports && chmod 0700 ${dbdir}/reports
 fi
 
-pushd /var/lib/aide >/dev/null
+pushd ${dbdir} >/dev/null
 
 # copy the old database
-if [ -f aide.db ]; then
+if [ -f ${database_file} ]; then
     newfile="${fname}.db"
-    if [ -f aide.db.sig ]; then
+    if [ -f ${database_file}.sig ]; then
         # do an integrity check
-	${gpg} --verify aide.db.sig
+	${gpg} --verify ${database_file}.sig
 	if [ "$?" == "1" ]; then
 	    printf "************************************************************\n"
 	    printf "GPG signature FAILED!  Your database has been tampered with!\n"
@@ -56,24 +61,27 @@ if [ -f aide.db ]; then
         printf "\n"
         read -s -e -p "Enter AIDE passphrase for aide@${host}: " gpgpass
         printf "\n"
-        echo ${gpgpass} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --detach-sign aide.db
+        echo ${gpgpass} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --detach-sign ${database_file} 
         if [ "$?" == "1" ]; then
             printf "FATAL:  Error occurred when creating the signature file!\n\n"
             exit 1
         fi
     }
     
-    cp -a aide.db ${newfile} 
-    ${aide} --update -B "database=file:/var/lib/aide/${newfile}" -B "database_out=file:/var/lib/aide/aide.db" \
-        -B "report_url=file:/var/lib/aide/reports/${fname}.report"
+    cp -f ${database_file} ${newfile} 
+    ${aide} --update -B "report_url=file:/var/lib/aide/reports/${fname}.report"
+    # rename the outbound file since we prefer operating on the "inbound" file
+    if [ "${database_file}" != "${databasenew_file}" ]; then
+        mv -f ${databasenew_file} ${database_file}
+    fi
     # create the signature file
-    [[ -f aide.db.sig ]] && rm -f aide.db.sig
+    [[ -f ${database_file}.sig ]] && rm -f ${database_file}.sig
     signfile
-    [[ ! -f aide.db.sig ]] && {
+    [[ ! -f ${database_file}.sig ]] && {
         printf "No signature was created; bad passphrase?  Try it again.\n\n"
         signfile
     }
-    [[ ! -f aide.db.sig ]] && {
+    [[ ! -f ${database_file}.sig ]] && {
         printf "FATAL: Signature was not created twice!  Something is very wrong here.\n\n"
         exit 1
     }

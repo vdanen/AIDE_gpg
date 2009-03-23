@@ -15,12 +15,17 @@ aide="/usr/sbin/aide"
 fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
 header="AIDE+gpg - GnuPG authenticity for AIDE databases\nversion: ${version} - \$Id$\n\n"
 
+# get the database directory
+dbdir=$(egrep '^@@define DBDIR' /etc/aide.conf | awk '{print $3}')
+database_file=$(egrep '^database=' /etc/aide.conf | sed "s|file:@@{DBDIR}|${dbdir}|g" | cut -d '=' -f 2)
+databasenew_file=$(egrep '^database_out=' /etc/aide.conf | sed "s|file:@@{DBDIR}|${dbdir}|g" | cut -d '=' -f 2)
+
 export GNUPGHOME=/root/.gnupg
 
 printf "${header}"
 
-if [ ! -d /var/lib/aide ]; then
-    printf "The AIDE database directory /var/lib/aide does not exist!\n\n"
+if [ ! -d ${dbdir} ]; then
+    printf "The AIDE database directory does not exist!\n\n"
     exit 1
 fi
 
@@ -73,10 +78,15 @@ if [ "`${gpg} --list-secret-key | grep aide@${host} >/dev/null 2>&1; echo $?`" =
         rm -f ${tmpfile}
         exit 1
     fi
+else
+    # a key already exists; we need the passphrase
+    printf "An AIDE key for aide@${host} already exists.  To sign the database\n"
+    printf "you must provide the passphrase.\n\n"
+    read -s -e -p "aide@${host} GPG passphrase: " PASS1
 fi
 
 signfile() {
-    echo ${PASS1} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --detach-sign aide.db
+    echo ${PASS1} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --detach-sign ${database_file}
     if [ "$?" == "1" ]; then
         printf "FATAL:  Error occurred when creating the signature file!\n\n"
         exit 1
@@ -86,12 +96,16 @@ signfile() {
 printf "Initializing the AIDE database... this may take a minute or two.\n"
 
 # set database to a non-existant file to prevent warnings
-${aide} --init -B "database=file:/tmp/foo" -B "database_out=file:/var/lib/aide/aide.db"
-pushd /var/lib/aide >/dev/null 2>&1
+${aide} --init 
+pushd ${dbdir} >/dev/null 2>&1
+    if [ -f ${databasenew_file} ]; then
+        # rename the outbound file
+        mv -f ${databasenew_file} ${database_file}
+    fi
     # create the signature file; we don't have to ask for the passphrase here, we've already got it
-    [[ -f aide.db.sig ]] && rm -f aide.db.sig
+    [[ -f ${database_file}.sig ]] && rm -f ${database_file}.sig
     signfile
-    [[ ! -f aide.db.sig ]] && {
+    [[ ! -f ${database_file}.sig ]] && {
         printf "FATAL: Signature was not created!  Aborting.\n\n"
         exit 1
     }

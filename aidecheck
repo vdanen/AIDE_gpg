@@ -14,20 +14,25 @@ aide="/usr/sbin/aide"
 fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
 header="AIDE+gpg - GnuPG authenticity for AIDE databases\nversion: ${version} - \$Id$\n\n"
 
+# get the database directory
+dbdir=$(egrep '^@@define DBDIR' /etc/aide.conf | awk '{print $3}')
+database_file=$(egrep '^database=' /etc/aide.conf | sed "s|file:@@{DBDIR}|${dbdir}|g" | cut -d '=' -f 2)
+databasenew_file=$(egrep '^database_out=' /etc/aide.conf | sed "s|file:@@{DBDIR}|${dbdir}|g" | cut -d '=' -f 2)
+
 export GNUPGHOME=/root/.gnupg
 
 echo "AIDE+gpg integrity check for ${hostname} beginning (`date`)"
 echo ""
-if [ ! -e /var/lib/aide/aide.db ] ; then
+if [ ! -e ${database_file} ] ; then
     echo "**** Error: AIDE database for ${hostname} not found."
     echo "**** Run 'aideinit' to create the database file."
 else
     if [ -f /etc/aide.conf ]; then
-        if [ -f /var/lib/aide/aide.db.sig ]; then
-	    pushd /var/lib/aide >/dev/null
+        if [ -f ${database_file}.sig ]; then
+	    pushd ${dbdir} >/dev/null
 	        echo "Verifying the GPG signature on the database..."
 		echo ""
-	        ${gpg} --verify aide.db.sig
+	        ${gpg} --verify ${database_file}.sig
 		echo ""
 		if [ "$?" == "1" ]; then
 		    echo "************************************************************"
