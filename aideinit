@@ -86,11 +86,12 @@ else
 fi
 
 signfile() {
-    echo ${PASS1} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --detach-sign ${database_file}
+    echo ${PASS1} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --batch --detach-sign ${database_file}
     if [ "$?" == "1" ]; then
         printf "FATAL:  Error occurred when creating the signature file!\n\n"
         exit 1
     fi
+    chmod 0600 ${database_file}.sig
 }
 
 printf "Initializing the AIDE database... this may take a minute or two.\n"
