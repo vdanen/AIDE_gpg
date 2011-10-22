@@ -20,12 +20,47 @@ dbdir=$(egrep '^@@define DBDIR' /etc/aide.conf | awk '{print $3}')
 database_file=$(egrep '^database=' /etc/aide.conf | sed "s|file:@@{DBDIR}|${dbdir}|g" | cut -d '=' -f 2)
 databasenew_file=$(egrep '^database_out=' /etc/aide.conf | sed "s|file:@@{DBDIR}|${dbdir}|g" | cut -d '=' -f 2)
 
+gpg_verify() {
+    if [ ! -f ${1} ]; then
+        printf "**** Error: No GPG signature found for the AIDE ${2}!\n"
+        printf "**** Unabel to verify; your system may be compromised or incorrectly configured!\n"
+        exit 1
+    fi
+
+    printf "\nVerifying ${2}: "
+    ${gpg} --verify ${1}
+    if [ "$?" != "0" ]; then
+        printf "************************************************************\n"
+        printf "GPG signature FAILED!  Your ${2} has been tampered with!\n"
+        printf "************************************************************\n"
+        exit 1
+    fi
+}
+
+# this function signs the aide.db with gpg
+signfile() {
+    unset gpgpass
+    printf "\n"
+    read -s -e -p "Enter AIDE passphrase for aide@${host}: " gpgpass
+    printf "\n"
+    echo ${gpgpass} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --batch --detach-sign ${1}
+    if [ "$?" == "1" ]; then
+        printf "FATAL:  Error occurred when creating the signature file!\n\n"
+        exit 1
+    fi
+    chmod 0600 ${1}.sig
+}
+
 export GNUPGHOME=/root/.gnupg
 
 if [ ! -d ${dbdir} ]; then
     printf "The AIDE database directory ${dbdir} does not exist!\n\n"
     exit 1
 fi
+
+# integrity checks
+gpg_verify ${aide}.sig binary
+gpg_verify /etc/aide.conf.sig configuration
 
 if [ ! -d ${dbdir}/reports ]; then
     printf "Creating ${dbdir}/reports to store reports\n"
@@ -34,18 +69,14 @@ fi
 
 pushd ${dbdir} >/dev/null
 
+printf "\nUpdating AIDE database...\n"
+
 # copy the old database
 if [ -f ${database_file} ]; then
     newfile="${fname}.db"
     if [ -f ${database_file}.sig ]; then
         # do an integrity check
-    ${gpg} --verify ${database_file}.sig
-    if [ "$?" != "0" ]; then
-        printf "************************************************************\n"
-        printf "GPG signature FAILED!  Your database has been tampered with!\n"
-        printf "************************************************************\n"
-        exit 1
-    fi
+        gpg_verify ${database_file}.sig database
     else
         printf "**************************************************************\n"
         printf "No GPG signature file found!  Your system may be compromised\n"
@@ -55,20 +86,6 @@ if [ -f ${database_file} ]; then
         exit 1
     fi
 
-    # this function signs the aide.db with gpg
-    signfile() {
-        unset gpgpass
-        printf "\n"
-        read -s -e -p "Enter AIDE passphrase for aide@${host}: " gpgpass
-        printf "\n"
-        echo ${gpgpass} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --batch --detach-sign ${database_file} 
-        if [ "$?" == "1" ]; then
-            printf "FATAL:  Error occurred when creating the signature file!\n\n"
-            exit 1
-        fi
-        chmod 0600 ${database_file}.sig
-    }
-
     cp -f ${database_file} ${newfile} 
     ${aide} --update -B "report_url=file:/var/lib/aide/reports/${fname}.report"
     # rename the outbound file since we prefer operating on the "inbound" file
@@ -77,7 +94,7 @@ if [ -f ${database_file} ]; then
     fi
     # create the signature file
     [[ -f ${database_file}.sig ]] && rm -f ${database_file}.sig
-    signfile
+    signfile ${database_file}
     [[ ! -f ${database_file}.sig ]] && {
         printf "No signature was created; bad passphrase?  Try it again.\n\n"
         signfile
