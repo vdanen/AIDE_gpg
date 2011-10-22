@@ -8,7 +8,7 @@
 # $Id$
 
 # variables
-version="1.0"
+version="@pkg_version@"
 gpg="/usr/bin/gpg"
 aide="/usr/sbin/aide"
 fname="aide-`hostname`-`date +%Y%m%d-%H%M%S`"
@@ -39,13 +39,13 @@ if [ -f ${database_file} ]; then
     newfile="${fname}.db"
     if [ -f ${database_file}.sig ]; then
         # do an integrity check
-	${gpg} --verify ${database_file}.sig
-	if [ "$?" == "1" ]; then
-	    printf "************************************************************\n"
-	    printf "GPG signature FAILED!  Your database has been tampered with!\n"
-	    printf "************************************************************\n"
-	    exit 1
-	fi
+    ${gpg} --verify ${database_file}.sig
+    if [ "$?" != "0" ]; then
+        printf "************************************************************\n"
+        printf "GPG signature FAILED!  Your database has been tampered with!\n"
+        printf "************************************************************\n"
+        exit 1
+    fi
     else
         printf "**************************************************************\n"
         printf "No GPG signature file found!  Your system may be compromised\n"
@@ -54,7 +54,7 @@ if [ -f ${database_file} ]; then
         printf "**************************************************************\n"
         exit 1
     fi
-    
+
     # this function signs the aide.db with gpg
     signfile() {
         unset gpgpass
@@ -68,7 +68,7 @@ if [ -f ${database_file} ]; then
         fi
         chmod 0600 ${database_file}.sig
     }
-    
+
     cp -f ${database_file} ${newfile} 
     ${aide} --update -B "report_url=file:/var/lib/aide/reports/${fname}.report"
     # rename the outbound file since we prefer operating on the "inbound" file

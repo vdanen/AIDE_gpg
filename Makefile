@@ -2,7 +2,7 @@ VERSION = 1.0.2
 PACKAGE = aide+gpg
 
 MANPAGES = aideinit.8
-SCRIPTS = aideinit aidecheck aideupdate
+SCRIPTS = aideinit aidecheck aideupdate aide-edit-conf
 
 PREFIX = 
 MANDIR = /usr/share/man

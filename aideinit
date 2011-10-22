@@ -8,7 +8,7 @@
 # $Id$
 
 # variables
-version="1.0"
+version="@pkg_version@"
 host="`hostname`"
 gpg="/usr/bin/gpg"
 aide="/usr/sbin/aide"
@@ -86,13 +86,27 @@ else
 fi
 
 signfile() {
-    echo ${PASS1} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --batch --detach-sign ${database_file}
+    [[ -f ${1}.sig ]] && rm -f ${1}.sig
+    echo ${PASS1} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --batch --detach-sign ${1}
     if [ "$?" == "1" ]; then
         printf "FATAL:  Error occurred when creating the signature file!\n\n"
         exit 1
     fi
-    chmod 0600 ${database_file}.sig
+    chmod 0600 ${1}.sig
+    [[ ! -f ${1}.sig ]] && {
+        printf "FATAL: Signature file ${1}.sig was not created! Aborting.\n\n"
+        exit 1
+    }
 }
+
+# first we sign the AIDE binary so on subsequent checks, before calling it,
+# we can verify the signature
+printf "Signing the AIDE binary...\n"
+signfile  ${aide}
+
+# likewise for the configuration file
+printf "Signing the AIDE configuration file...\n"
+signfile /etc/aide.conf
 
 printf "Initializing the AIDE database... this may take a minute or two.\n"
 
@@ -105,11 +119,7 @@ pushd ${dbdir} >/dev/null 2>&1
     fi
     # create the signature file; we don't have to ask for the passphrase here, we've already got it
     [[ -f ${database_file}.sig ]] && rm -f ${database_file}.sig
-    signfile
-    [[ ! -f ${database_file}.sig ]] && {
-        printf "FATAL: Signature was not created!  Aborting.\n\n"
-        exit 1
-    }
+    signfile ${database_file}
     printf "Database successfully signed.\n\n"
 popd >/dev/null 2>&1
 
