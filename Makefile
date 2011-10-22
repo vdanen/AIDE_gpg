@@ -16,7 +16,9 @@ dist: clean changelog
 	cp -p $$file $(PACKAGE)-$(VERSION)/ ; \
 	done
 	find $(PACKAGE)-$(VERSION) -type d -name .svn | xargs rm -rf
-	sed -e 's|@pkg_version@|$(VERSION)|g' aidecheck >$(PACKAGE)-$(VERSION)/aidecheck
+	for file in $(SCRIPTS); do \
+	sed -e 's|@pkg_version@|$(VERSION)|g' aidecheck >$(PACKAGE)-$(VERSION)/$$file ; \
+	done
 	tar cfj $(PACKAGE)-$(VERSION).tar.bz2 $(PACKAGE)-$(VERSION)
 	rm -rf $(PACKAGE)-$(VERSION)
 
