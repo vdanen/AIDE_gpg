@@ -17,7 +17,7 @@ dist: clean changelog
 	done
 	find $(PACKAGE)-$(VERSION) -type d -name .svn | xargs rm -rf
 	for file in $(SCRIPTS); do \
-	sed -e 's|@pkg_version@|$(VERSION)|g' aidecheck >$(PACKAGE)-$(VERSION)/$$file ; \
+	sed -e 's|@pkg_version@|$(VERSION)|g' $$file >$(PACKAGE)-$(VERSION)/$$file ; \
 	done
 	tar cfj $(PACKAGE)-$(VERSION).tar.bz2 $(PACKAGE)-$(VERSION)
 	rm -rf $(PACKAGE)-$(VERSION)
@@ -36,8 +36,8 @@ install:
 	mkdir -p $(PREFIX)/$(SBINDIR)
 	mkdir -p $(PREFIX)/$(MANDIR)/man8
 	for script in $(SCRIPTS); do \
-	cp -p $$script $(PREFIX)$(SBINDIR)/ ; \
+		install -m 0750 $$script $(PREFIX)$(SBINDIR); \
 	done
 	for manpage in $(MANPAGES); do \
-	cp -p $$manpage $(PREFIX)$(MANDIR)/man8/ ; \
+		install -m 0644 $$manpage $(PREFIX)$(MANDIR)/man8; \
 	done
