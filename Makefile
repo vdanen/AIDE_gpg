@@ -1,4 +1,4 @@
-VERSION = 1.0.3
+VERSION = 1.0.4
 PACKAGE = aide+gpg
 
 MANPAGES = aideinit.8
