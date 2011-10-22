@@ -1,0 +1,86 @@
+#!/bin/sh
+#
+# script to edit the aide.conf and also verify signatures and create a new
+# one
+#
+# written by Vincent Danen <vdanen-at-annvix.org>
+#
+# $Id: aideupdate 896 2011-02-23 21:29:14Z vdanen $
+
+# variables
+version="@pkg_version@"
+gpg="/usr/bin/gpg"
+aide="/usr/sbin/aide"
+host="`hostname`"
+header="AIDE+gpg - GnuPG authenticity for AIDE databases\nversion: ${version} - \$Id: aideupdate 896 2011-02-23 21:29:14Z vdanen $\n\n"
+
+if [ -z "${EDITOR}"]; then
+    printf "Environment EDITOR is not set!  "
+    if [ -f /usr/bin/vim ]; then
+        printf "using vim\n"
+        editor="/usr/bin/vim"
+    elif [ -f /bin/vi ]; then
+        printf "using vi\n"
+        editor="/bin/vi"
+    else
+        printf "\nFATAL: Unable to use /usr/bin/vim or /bin/vi; please set EDITOR to a valid text editor.\n"
+        exit 1
+    fi
+else
+    editor="${EDITOR}"
+fi
+
+gpg_verify() {
+    if [ ! -f ${1} ]; then
+        printf "**** Error: No GPG signature found for the AIDE ${2}!i\n"
+        printf "**** Unabel to verify; your system may be compromised or incorrectly configured!\n"
+        exit 1
+    fi
+
+    printf "\nVerifying ${2}: "
+    ${gpg} --verify ${1}
+    if [ "$?" != "0" ]; then
+        printf "************************************************************\n"
+        printf "GPG signature FAILED!  Your ${2} has been tampered with!\n"
+        printf "************************************************************\n"
+        exit 1
+    fi
+}
+
+# this function signs the aide.db with gpg
+signfile() {
+    unset gpgpass
+    printf "\n"
+    read -s -e -p "Enter AIDE passphrase for aide@${host}: " gpgpass
+    printf "\n"
+    echo ${gpgpass} | ${gpg} -u aide@${host} --passphrase-fd stdin --no-tty --batch --detach-sign ${1}
+    if [ "$?" == "1" ]; then
+        printf "FATAL:  Error occurred when creating the signature file!\n\n"
+        exit 1
+    fi
+    chmod 0600 ${1}.sig
+}
+
+if [ -f /etc/aide.conf ]; then
+    gpg_verify /etc/aide.conf.sig configuration
+
+    ${editor} /etc/aide.conf
+
+    [[ -f /etc/aide.conf.sig ]] && rm -f /etc/aide.conf.sig
+    signfile /etc/aide.conf
+
+    [[ ! -f /etc/aide.conf.sig ]] && {
+        printf "No signature was created; bad passphrase?  Try it again.\n\n"
+        signfile
+    }
+    [[ ! -f /etc/aide.conf.sig ]] && {
+        printf "FATAL: Signature was not created twice!  Something is very wrong here.\n\n"
+        exit 1
+    }
+    printf "Configuration successfully signed.\n\n"
+else
+    printf "The AIDE configuration file does not exist, can't edit!\n\n"
+    exit 1
+fi
+
+exit 0
