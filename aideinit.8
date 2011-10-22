@@ -8,14 +8,20 @@
 AIDE is an integrity checking system that will alert you if any unauthorized
 changes are made to your filesystem.
 .LP
-The \fBaideinit\fR, \fBaidecheck\fR, and \fBaideinit\fR scripts were written
-by Vincent Danen <vdanen@annvix.org> for Annvix to provide much-needed data
-integrity checking to the AIDE database.  Upstream AIDE does not provide any
+The \fBaideinit\fR, \fBaidecheck\fR, \fBaideinit\fR and
+\fBaide-edit-conf\fR scripts were written by Vincent Danen
+<vdanen@annvix.org> for Annvix to provide much-needed data integrity
+checking to the AIDE database.  Upstream AIDE does not provide any
 mechanism for integrity checking, so in January 2006 before AIDE could be
-considered a useful replacement for Tripwire in Annvix, the AIDE+gpg scripts
-were written to allow the use of GnuPG to sign and verify the AIDE database.
-This provides the assurance required to know that the AIDE database is not
-tampered with.
+considered a useful replacement for Tripwire in Annvix, the AIDE+gpg
+scripts were written to allow the use of GnuPG to sign and verify the AIDE
+database.  This provides the assurance required to know that the AIDE
+database is not tampered with.
+.LP
+As of version 1.0.3, the scripts also check to make sure that the aide
+binary and the /etc/aide.conf configuration file have not been changed
+either.  Because of this, \fBaide-edit-conf\fR should be used to edit your
+aide.conf file.
 .LP
 The default AIDE configuration tries to be as
 comprehensive as possible, however it will require tailoring to your specific
