@@ -1,0 +1,110 @@
+2011-10-22 16:55  Vincent Danen <vdanen at annvix.org>
+
+	* Makefile:
+	  1.0.4
+
+2011-10-22 16:55  Vincent Danen <vdanen at annvix.org>
+
+	* aideupdate:
+	  verify binaries and config when doing an update also
+
+2011-10-22 05:13  Vincent Danen <vdanen at annvix.org>
+
+	* aide-edit-conf:
+	  include the aide-edit-conf script
+
+2011-10-22 05:10  Vincent Danen <vdanen at annvix.org>
+
+	* Makefile:
+	  1.0.3
+
+2011-10-22 05:10  Vincent Danen <vdanen at annvix.org>
+
+	* aideinit.8:
+	  note aide-edit-conf and that we check the aide binary and config
+
+2011-10-22 05:07  Vincent Danen <vdanen at annvix.org>
+
+	* Makefile, aidecheck, aideinit, aideupdate:
+	  now we sign the aide binary and /etc/aide.conf as well, and make
+	  sure they are not tampered with when doing a check; added
+	  aide-edit-conf to check the sig before editing the config and
+	  then signing it again immediately after
+
+2011-10-22 04:02  Vincent Danen <vdanen at annvix.org>
+
+	* Makefile:
+	  fix temp file installs and specify perms when installing files
+
+2011-10-22 03:44  Vincent Danen <vdanen at annvix.org>
+
+	* Makefile:
+	  brand all scripts with the proper version
+
+2011-02-23 21:29  Vincent Danen <vdanen at annvix.org>
+
+	* Makefile:
+	  version 1.0.2
+
+2011-02-23 21:29  Vincent Danen <vdanen at annvix.org>
+
+	* aideinit, aideupdate:
+	  use --batch for the gpg signing call (necessary with gpg2), make
+	  the db signature mode 0600
+
+2011-02-23 21:28  Vincent Danen <vdanen at annvix.org>
+
+	* aideinit.8:
+	  fix email address
+
+2009-03-23 00:53  Vincent Danen <vdanen at annvix.org>
+
+	* Makefile:
+	  1.0.1
+
+2009-03-23 00:51  Vincent Danen <vdanen at annvix.org>
+
+	* aidecheck, aideinit, aideupdate:
+	  get the database directory and files from aide.conf instead of
+	  making hard-coded assumptions, and ask for the passphrase if
+	  calling aideinit with a pre-existing aide gpg key
+
+2009-03-22 22:54  Vincent Danen <vdanen at annvix.org>
+
+	* Makefile:
+	  create the target directories before installing to them
+
+2008-07-24 20:22  Vincent Danen <vdanen at annvix.org>
+
+	* .:
+	  ignore ChangeLog
+
+2008-07-24 20:19  Vincent Danen <vdanen at annvix.org>
+
+	* aidecheck:
+	  use @pkg_version@ macro
+
+2008-04-29 16:38  Vincent Danen <vdanen at annvix.org>
+
+	* Makefile:
+	  big overhaul on Makefile: OS X doesn't like the cpio call so
+	  simplify it and add an install target
+
+2008-04-29 16:06  Vincent Danen <vdanen at annvix.org>
+
+	* aidecheck, aideinit, aideupdate:
+	  add some branding
+
+2008-04-29 15:58  Vincent Danen <vdanen at annvix.org>
+
+	* aidecheck, aideinit, aideupdate:
+	  under Mandriva, gpg doesn't find it's public/secret keys unless
+	  GNUPGHOME is set, but cron seems to clean the environment so it
+	  must be explicitly set
+
+2008-04-29 15:55  Vincent Danen <vdanen at annvix.org>
+
+	* ., AUTHORS, COPYING, Makefile, aidecheck, aideinit, aideinit.8,
+	  aideupdate:
+	  AIDE+gpg initially import
+
