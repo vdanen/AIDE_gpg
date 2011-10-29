@@ -1,0 +1,7 @@
+AIDE+gpg
+
+This is a set of scripts originally written for the Annvix Linux operating
+system, to act as a wrapper/frontend for the AIDE command, in order to
+provide authenticity features similar to those found in Tripwire.
+
+http://annvix.org/Tools/AIDE_gpg
